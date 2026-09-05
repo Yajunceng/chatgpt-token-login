@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChatGPT Token 登录工具</title>
+    <title>ChatGPT 一键登录工具</title>
     <style>
         * {
             margin: 0;
@@ -141,6 +141,76 @@
             display: block;
         }
 
+        .bookmark-container {
+            display: none;
+            margin-top: 30px;
+            padding: 25px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 12px;
+            border: 2px dashed #667eea;
+        }
+
+        .bookmark-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .bookmark-link {
+            display: block;
+            text-align: center;
+            padding: 20px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            margin: 20px 0;
+            cursor: move;
+            transition: all 0.3s;
+        }
+
+        .bookmark-link:hover {
+            background: #5568d3;
+            transform: scale(1.02);
+        }
+
+        .step {
+            margin: 20px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+        }
+
+        .step-number {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            font-weight: 700;
+            margin-right: 10px;
+        }
+
+        .step-content {
+            display: inline-block;
+            vertical-align: top;
+            color: #333;
+            font-size: 14px;
+            line-height: 1.6;
+            max-width: calc(100% - 50px);
+        }
+
+        .step-content strong {
+            color: #667eea;
+        }
+
         .info-box {
             background: #e7f3ff;
             border-left: 4px solid #2196F3;
@@ -159,12 +229,6 @@
             margin: 5px 0;
         }
 
-        .info-box.highlight {
-            background: #fff3e0;
-            border-left-color: #ff9800;
-            color: #e65100;
-        }
-
         code {
             background: #f5f5f5;
             padding: 2px 6px;
@@ -173,62 +237,30 @@
             font-size: 12px;
         }
 
-        .script-box {
-            background: #2d2d2d;
-            color: #f8f8f2;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 15px 0;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-            overflow-x: auto;
-            position: relative;
-        }
-
-        .copy-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 11px;
-        }
-
-        .copy-btn:hover {
-            background: #5568d3;
-        }
-
-        .step {
-            margin: 20px 0;
-            padding: 15px;
-            background: #f9f9f9;
-            border-radius: 8px;
-        }
-
-        .step-title {
+        .highlight {
+            background: #fff9e6;
+            padding: 3px 6px;
+            border-radius: 3px;
             font-weight: 600;
-            color: #667eea;
-            margin-bottom: 10px;
-            font-size: 16px;
         }
 
-        .step-content {
-            color: #555;
-            line-height: 1.6;
+        .video-tip {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #666;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🔐 ChatGPT Token 登录工具</h1>
-        <p class="subtitle">使用 Session Token 快速登录到 ChatGPT 账号</p>
+        <h1>🚀 ChatGPT 一键登录工具</h1>
+        <p class="subtitle">只需拖动书签，点击即可登录 - 无需开发者工具</p>
 
         <div class="warning">
-            ⚠️ <strong>安全提示：</strong>这个工具完全在本地运行，不会上传任何数据到服务器。使用完后记得让朋友重新登录以使旧 token 失效。
+            ⚠️ <strong>安全提示：</strong>这个工具完全在浏览器本地运行，不会上传任何数据。书签中的 token 只在你的浏览器中，使用完后可随时删除书签。
         </div>
 
         <div>
@@ -242,7 +274,7 @@
 
         <div class="button-group">
             <button class="btn-primary" id="generateBtn">
-                🎯 生成登录脚本
+                🎯 生成登录书签
             </button>
             <button class="btn-secondary" id="clearBtn">
                 🗑️ 清除
@@ -251,52 +283,55 @@
 
         <div id="status" class="status"></div>
 
-        <div id="scriptContainer" style="display: none;">
+        <div id="bookmarkContainer" class="bookmark-container">
+            <div class="bookmark-title">🔖 你的专属登录书签</div>
+
+            <a href="#" id="bookmarkLink" class="bookmark-link" draggable="true">
+                🔐 ChatGPT 快速登录
+            </a>
+
             <div class="step">
-                <div class="step-title">📋 步骤 1：复制下面的脚本</div>
+                <span class="step-number">1</span>
                 <div class="step-content">
-                    点击"复制脚本"按钮
-                </div>
-                <div class="script-box">
-                    <button class="copy-btn" onclick="copyScript()">📋 复制脚本</button>
-                    <pre id="scriptCode" style="margin: 0; white-space: pre-wrap; word-break: break-all;"></pre>
+                    <strong>拖动书签：</strong>把上面的蓝色按钮拖到浏览器的<span class="highlight">书签栏</span>
+                    <div class="video-tip">💡 如果看不到书签栏：按 Cmd+Shift+B (Mac) 或 Ctrl+Shift+B (Windows) 显示</div>
                 </div>
             </div>
 
             <div class="step">
-                <div class="step-title">🌐 步骤 2：打开 ChatGPT</div>
+                <span class="step-number">2</span>
                 <div class="step-content">
-                    在新标签页中访问：<a href="https://chatgpt.com" target="_blank" style="color: #667eea;">https://chatgpt.com</a>
+                    <strong>打开 ChatGPT：</strong>在新标签页访问 <a href="https://chatgpt.com" target="_blank" style="color: #667eea;">chatgpt.com</a>
                 </div>
             </div>
 
             <div class="step">
-                <div class="step-title">⚡ 步骤 3：运行脚本</div>
+                <span class="step-number">3</span>
                 <div class="step-content">
-                    1. 在 ChatGPT 页面按 <code>F12</code> 打开开发者工具<br>
-                    2. 切换到 <code>Console</code> (控制台) 标签<br>
-                    3. 粘贴刚才复制的脚本<br>
-                    4. 按 <code>Enter</code> 运行<br>
-                    5. 页面会自动刷新并登录
+                    <strong>点击书签：</strong>在 ChatGPT 页面点击刚才保存的书签，<span class="highlight">自动登录并跳转到充值页面</span>
+                </div>
+            </div>
+
+            <div class="step">
+                <span class="step-number">4</span>
+                <div class="step-content">
+                    <strong>完成充值：</strong>输入你的U卡信息完成支付
                 </div>
             </div>
         </div>
 
         <div class="info-box">
-            <strong>📝 使用说明：</strong>
+            <strong>📝 为什么用书签？</strong>
             <ul>
-                <li>1. 让你朋友发送他的认证 JSON 给你</li>
-                <li>2. 粘贴到上面的输入框</li>
-                <li>3. 点击"生成登录脚本"</li>
-                <li>4. 按照下方步骤操作</li>
-                <li>5. 登录后访问充值页面，输入你的U卡信息</li>
+                <li>✅ <strong>超简单</strong> - 只需要点一下，不需要任何技术操作</li>
+                <li>✅ <strong>无跨域问题</strong> - 书签在 ChatGPT 页面运行，可以正常设置 Cookie</li>
+                <li>✅ <strong>可重复使用</strong> - 只要 token 没过期，可以多次使用</li>
+                <li>✅ <strong>安全</strong> - token 只存在你的书签中，不经过任何服务器</li>
             </ul>
         </div>
     </div>
 
     <script>
-        var extractedToken = '';
-
         function showStatus(message, isError) {
             var status = document.getElementById('status');
             status.textContent = message;
@@ -312,21 +347,20 @@
         function clearToken() {
             document.getElementById('tokenInput').value = '';
             document.getElementById('status').style.display = 'none';
-            document.getElementById('scriptContainer').style.display = 'none';
-            extractedToken = '';
+            document.getElementById('bookmarkContainer').style.display = 'none';
         }
 
-        function generateScript() {
+        function generateBookmark() {
             var input = document.getElementById('tokenInput').value.trim();
 
             if (!input) {
-                showStatus('❌ 请先粘贴内容', true);
+                showStatus('❌ 请先粘贴认证信息', true);
                 return;
             }
 
             var token = input;
 
-            // 尝试解析 JSON，自动提取 sessionToken
+            // 尝试解析 JSON
             if (input.startsWith('{')) {
                 try {
                     var jsonData = JSON.parse(input);
@@ -349,79 +383,49 @@
                 return;
             }
 
-            extractedToken = token;
-
-            // 生成脚本
-            var script = "(function() {\n" +
-                "  // 清除旧的 cookies\n" +
-                "  var cookies = document.cookie.split(';');\n" +
-                "  for (var i = 0; i < cookies.length; i++) {\n" +
-                "    var cookie = cookies[i];\n" +
-                "    var eqPos = cookie.indexOf('=');\n" +
-                "    var name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;\n" +
-                "    document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=.chatgpt.com';\n" +
-                "  }\n\n" +
-                "  // 设置新的 session token\n" +
-                "  var token = '" + token + "';\n" +
-                "  var expires = new Date();\n" +
-                "  expires.setDate(expires.getDate() + 30);\n" +
-                "  document.cookie = '__Secure-next-auth.session-token=' + token + '; expires=' + expires.toUTCString() + '; domain=.chatgpt.com; path=/; secure; samesite=lax';\n\n" +
-                "  console.log('✅ Token 已设置，正在刷新页面...');\n" +
-                "  setTimeout(function() {\n" +
-                "    window.location.href = 'https://chatgpt.com/settings/billing';\n" +
-                "  }, 500);\n" +
+            // 生成书签代码
+            var bookmarkCode = "javascript:(function(){" +
+                "var t='" + token.replace(/'/g, "\\'") + "';" +
+                "var c=document.cookie.split(';');" +
+                "for(var i=0;i<c.length;i++){" +
+                "var n=c[i].trim().split('=')[0];" +
+                "document.cookie=n+'=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=.chatgpt.com';" +
+                "}" +
+                "var e=new Date();" +
+                "e.setDate(e.getDate()+30);" +
+                "document.cookie='__Secure-next-auth.session-token='+t+';expires='+e.toUTCString()+';domain=.chatgpt.com;path=/;secure;samesite=lax';" +
+                "alert('✅ 登录成功！页面即将跳转到充值页面');" +
+                "setTimeout(function(){window.location.href='https://chatgpt.com/settings/billing';},1000);" +
                 "})();";
 
-            document.getElementById('scriptCode').textContent = script;
-            document.getElementById('scriptContainer').style.display = 'block';
-            showStatus('✅ 登录脚本已生成！请按照下方步骤操作', false);
+            // 设置书签链接
+            var bookmarkLink = document.getElementById('bookmarkLink');
+            bookmarkLink.href = bookmarkCode;
 
-            // 滚动到脚本区域
+            // 显示书签容器
+            document.getElementById('bookmarkContainer').style.display = 'block';
+            showStatus('✅ 登录书签已生成！请按照下方步骤操作', false);
+
+            // 滚动到书签区域
             setTimeout(function() {
-                document.getElementById('scriptContainer').scrollIntoView({ behavior: 'smooth' });
+                document.getElementById('bookmarkContainer').scrollIntoView({ behavior: 'smooth' });
             }, 300);
         }
 
-        function copyScript() {
-            var scriptText = document.getElementById('scriptCode').textContent;
-
-            // 复制到剪贴板
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(scriptText).then(function() {
-                    showStatus('✅ 脚本已复制到剪贴板！', false);
-                }).catch(function(err) {
-                    fallbackCopy(scriptText);
-                });
-            } else {
-                fallbackCopy(scriptText);
-            }
-        }
-
-        function fallbackCopy(text) {
-            var textarea = document.createElement('textarea');
-            textarea.value = text;
-            textarea.style.position = 'fixed';
-            textarea.style.opacity = '0';
-            document.body.appendChild(textarea);
-            textarea.select();
-            try {
-                document.execCommand('copy');
-                showStatus('✅ 脚本已复制到剪贴板！', false);
-            } catch (err) {
-                showStatus('❌ 复制失败，请手动复制', true);
-            }
-            document.body.removeChild(textarea);
-        }
-
         // 绑定事件
-        document.getElementById('generateBtn').addEventListener('click', generateScript);
+        document.getElementById('generateBtn').addEventListener('click', generateBookmark);
         document.getElementById('clearBtn').addEventListener('click', clearToken);
 
         // 支持快捷键
         document.getElementById('tokenInput').addEventListener('keydown', function(e) {
             if (e.ctrlKey && e.key === 'Enter') {
-                generateScript();
+                generateBookmark();
             }
+        });
+
+        // 书签拖动提示
+        document.getElementById('bookmarkLink').addEventListener('dragstart', function(e) {
+            showStatus('👍 很好！现在把它拖到书签栏', false);
         });
     </script>
 </body>
