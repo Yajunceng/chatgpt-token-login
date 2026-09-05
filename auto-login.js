@@ -79,20 +79,12 @@ async function startLogin(sessionToken) {
             timeout: 30000
         });
 
-        // 设置 Cookie
-        const expiresDate = new Date();
-        expiresDate.setDate(expiresDate.getDate() + 30);
-
-        await page.setCookie({
-            name: '__Secure-next-auth.session-token',
-            value: sessionToken,
-            domain: '.chatgpt.com',
-            path: '/',
-            expires: Math.floor(expiresDate.getTime() / 1000),
-            httpOnly: false,
-            secure: true,
-            sameSite: 'Lax'
-        });
+        // 使用 evaluateOnNewDocument 在页面加载前注入 Cookie
+        await page.evaluateOnNewDocument((token) => {
+            const expires = new Date();
+            expires.setDate(expires.getDate() + 30);
+            document.cookie = `__Secure-next-auth.session-token=${token}; expires=${expires.toUTCString()}; domain=.chatgpt.com; path=/; secure; samesite=lax`;
+        }, sessionToken);
 
         console.log('✅ Cookie 已设置');
         console.log('🔄 正在刷新页面以应用登录状态...');
