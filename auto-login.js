@@ -82,22 +82,78 @@ async function startLogin(sessionToken) {
         console.log('🔐 正在注入 Cookie...');
 
         // 在页面上下文中设置 Cookie
-        await page.evaluate((token) => {
+        const cookieSet = await page.evaluate((token) => {
             const expires = new Date();
             expires.setDate(expires.getDate() + 30);
+
+            // 设置 Cookie
             document.cookie = `__Secure-next-auth.session-token=${token}; expires=${expires.toUTCString()}; domain=.chatgpt.com; path=/; secure; samesite=lax`;
-            console.log('Cookie 已设置:', document.cookie);
+
+            // 验证 Cookie 是否设置成功
+            const cookies = document.cookie;
+            const hasToken = cookies.includes('__Secure-next-auth.session-token');
+
+            return {
+                success: hasToken,
+                allCookies: cookies,
+                tokenLength: token.length
+            };
         }, sessionToken);
+
+        console.log('Cookie 设置结果:', cookieSet);
+
+        if (!cookieSet.success) {
+            console.log('⚠️  警告：Cookie 可能没有设置成功');
+            console.log('尝试使用 CDP 协议直接设置...');
+
+            // 使用 CDP 协议直接设置 Cookie
+            const client = await page.target().createCDPSession();
+            await client.send('Network.setCookie', {
+                name: '__Secure-next-auth.session-token',
+                value: sessionToken,
+                domain: '.chatgpt.com',
+                path: '/',
+                secure: true,
+                httpOnly: false,
+                sameSite: 'Lax'
+            });
+
+            console.log('✅ 已通过 CDP 设置 Cookie');
+        }
 
         console.log('✅ Cookie 已设置');
         console.log('🔄 正在刷新页面以应用登录状态...');
         console.log();
+
+        // 等待一下确保 Cookie 写入
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
         // 刷新页面以应用登录状态
         await page.goto('https://chatgpt.com', {
             waitUntil: 'networkidle2',
             timeout: 30000
         });
+
+        // 检查刷新后的 Cookie
+        const afterRefresh = await page.evaluate(() => {
+            return {
+                cookies: document.cookie,
+                hasToken: document.cookie.includes('__Secure-next-auth.session-token')
+            };
+        });
+
+        console.log('刷新后 Cookie 状态:', afterRefresh);
+
+        // 检查是否登录成功（看页面上是否有登录按钮）
+        const isLoggedIn = await page.evaluate(() => {
+            // 如果有"登录"按钮，说明没登录成功
+            const loginButton = document.querySelector('button') || document.querySelector('a');
+            const pageText = document.body.innerText;
+            return !pageText.includes('登录') || pageText.includes('zhang qiuqiu');
+        });
+
+        console.log('登录状态检查:', isLoggedIn ? '✅ 已登录' : '❌ 未登录');
+        console.log();
 
         // 等待一下确保登录生效
         await new Promise(resolve => setTimeout(resolve, 2000));
