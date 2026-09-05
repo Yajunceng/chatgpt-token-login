@@ -71,7 +71,7 @@ async function startLogin(sessionToken) {
 
         const page = await browser.newPage();
 
-        console.log('📝 正在设置 Cookie...');
+        console.log('📝 正在访问 ChatGPT...');
 
         // 先访问 ChatGPT 来建立域名上下文
         await page.goto('https://chatgpt.com', {
@@ -79,11 +79,14 @@ async function startLogin(sessionToken) {
             timeout: 30000
         });
 
-        // 使用 evaluateOnNewDocument 在页面加载前注入 Cookie
-        await page.evaluateOnNewDocument((token) => {
+        console.log('🔐 正在注入 Cookie...');
+
+        // 在页面上下文中设置 Cookie
+        await page.evaluate((token) => {
             const expires = new Date();
             expires.setDate(expires.getDate() + 30);
             document.cookie = `__Secure-next-auth.session-token=${token}; expires=${expires.toUTCString()}; domain=.chatgpt.com; path=/; secure; samesite=lax`;
+            console.log('Cookie 已设置:', document.cookie);
         }, sessionToken);
 
         console.log('✅ Cookie 已设置');
