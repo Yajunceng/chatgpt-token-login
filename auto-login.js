@@ -97,7 +97,7 @@ async function startLogin(sessionToken) {
         });
 
         // 等待一下确保登录生效
-        await page.waitForTimeout(2000);
+        await new Promise(resolve => setTimeout(resolve, 2000));
 
         console.log('✅ 登录成功！');
         console.log('📍 正在跳转到充值页面...');
