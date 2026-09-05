@@ -187,10 +187,10 @@
         </div>
 
         <div class="button-group">
-            <button class="btn-primary" onclick="loginWithToken()">
+            <button class="btn-primary" id="loginBtn">
                 🚀 使用 Token 登录
             </button>
-            <button class="btn-secondary" onclick="clearToken()">
+            <button class="btn-secondary" id="clearBtn">
                 🗑️ 清除
             </button>
         </div>
@@ -211,13 +211,13 @@
     </div>
 
     <script>
-        function showStatus(message, isError = false) {
-            const status = document.getElementById('status');
+        function showStatus(message, isError) {
+            var status = document.getElementById('status');
             status.textContent = message;
             status.className = 'status ' + (isError ? 'error' : 'success');
 
             if (!isError) {
-                setTimeout(() => {
+                setTimeout(function() {
                     status.style.display = 'none';
                 }, 5000);
             }
@@ -229,7 +229,7 @@
         }
 
         function loginWithToken() {
-            const token = document.getElementById('tokenInput').value.trim();
+            var token = document.getElementById('tokenInput').value.trim();
 
             if (!token) {
                 showStatus('❌ 请先粘贴 Session Token', true);
@@ -241,99 +241,61 @@
                 return;
             }
 
-            showStatus('✅ 正在打开新窗口...');
+            showStatus('✅ 正在打开新窗口...', false);
 
             // 打开新窗口
-            const newWindow = window.open('about:blank', '_blank');
+            var newWindow = window.open('about:blank', '_blank', 'width=1200,height=800');
 
             if (!newWindow) {
                 showStatus('❌ 无法打开新窗口，请允许弹出窗口', true);
                 return;
             }
 
-            // 在新窗口中注入登录脚本
-            newWindow.document.write(`
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>正在登录 ChatGPT...</title>
-                    <style>
-                        body {
-                            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-                            display: flex;
-                            justify-content: center;
-                            align-items: center;
-                            height: 100vh;
-                            margin: 0;
-                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                        }
-                        .loader {
-                            text-align: center;
-                            color: white;
-                        }
-                        .spinner {
-                            border: 4px solid rgba(255,255,255,0.3);
-                            border-top: 4px solid white;
-                            border-radius: 50%;
-                            width: 50px;
-                            height: 50px;
-                            animation: spin 1s linear infinite;
-                            margin: 0 auto 20px;
-                        }
-                        @keyframes spin {
-                            0% { transform: rotate(0deg); }
-                            100% { transform: rotate(360deg); }
-                        }
-                        h2 { margin: 0 0 10px 0; }
-                        p { margin: 5px 0; opacity: 0.9; }
-                    </style>
-                </head>
-                <body>
-                    <div class="loader">
-                        <div class="spinner"></div>
-                        <h2>正在登录 ChatGPT</h2>
-                        <p>请稍候，正在注入认证信息...</p>
-                    </div>
-                    <script>
-                        // 先跳转到 ChatGPT
-                        window.location.href = 'https://chatgpt.com';
+            // 构建登录页面 HTML
+            var loginPageHTML = '<!DOCTYPE html>' +
+                '<html><head><title>正在登录 ChatGPT...</title>' +
+                '<style>' +
+                'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }' +
+                '.loader { text-align: center; color: white; }' +
+                '.spinner { border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid white; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto 20px; }' +
+                '@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }' +
+                'h2 { margin: 0 0 10px 0; } p { margin: 5px 0; opacity: 0.9; }' +
+                '</style></head><body>' +
+                '<div class="loader"><div class="spinner"></div><h2>正在登录 ChatGPT</h2><p>请稍候，正在注入认证信息...</p></div>' +
+                '<script>' +
+                'setTimeout(function() {' +
+                '  window.location.href = "https://chatgpt.com";' +
+                '}, 1000);' +
+                'window.addEventListener("load", function() {' +
+                '  setTimeout(function() {' +
+                '    var cookies = document.cookie.split(";");' +
+                '    for (var i = 0; i < cookies.length; i++) {' +
+                '      var cookie = cookies[i];' +
+                '      var name = cookie.trim().split("=")[0];' +
+                '      document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=.chatgpt.com";' +
+                '    }' +
+                '    var token = ' + JSON.stringify(token) + ';' +
+                '    var expires = new Date();' +
+                '    expires.setDate(expires.getDate() + 30);' +
+                '    document.cookie = "__Secure-next-auth.session-token=" + token + "; expires=" + expires.toUTCString() + "; domain=.chatgpt.com; path=/; secure; samesite=lax";' +
+                '    setTimeout(function() {' +
+                '      window.location.href = "https://chatgpt.com/settings/billing";' +
+                '    }, 1000);' +
+                '  }, 2000);' +
+                '});' +
+                '<\/script></body></html>';
 
-                        // 等待页面加载后注入 cookie
-                        window.addEventListener('load', function() {
-                            setTimeout(function() {
-                                // 清除可能存在的旧登录
-                                document.cookie.split(";").forEach(function(c) {
-                                    const name = c.trim().split("=")[0];
-                                    document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=.chatgpt.com";
-                                });
+            newWindow.document.write(loginPageHTML);
+            newWindow.document.close();
 
-                                // 设置新的 session token
-                                const token = ${JSON.stringify(token)};
-                                const expires = new Date();
-                                expires.setDate(expires.getDate() + 30); // 30天有效期
-
-                                document.cookie = "__Secure-next-auth.session-token=" + token +
-                                    "; expires=" + expires.toUTCString() +
-                                    "; domain=.chatgpt.com" +
-                                    "; path=/" +
-                                    "; secure" +
-                                    "; samesite=lax";
-
-                                // 刷新页面以应用登录状态
-                                setTimeout(function() {
-                                    window.location.href = 'https://chatgpt.com/settings/billing';
-                                }, 1000);
-                            }, 2000);
-                        });
-                    </script>
-                </body>
-                </html>
-            `);
-
-            showStatus('✅ 新窗口已打开！等待几秒后会自动跳转到充值页面');
+            showStatus('✅ 新窗口已打开！等待几秒后会自动跳转到充值页面', false);
         }
 
-        // 支持回车键快速登录
+        // 绑定事件
+        document.getElementById('loginBtn').addEventListener('click', loginWithToken);
+        document.getElementById('clearBtn').addEventListener('click', clearToken);
+
+        // 支持快捷键
         document.getElementById('tokenInput').addEventListener('keydown', function(e) {
             if (e.ctrlKey && e.key === 'Enter') {
                 loginWithToken();
