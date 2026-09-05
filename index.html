@@ -26,7 +26,7 @@
             border-radius: 16px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             padding: 40px;
-            max-width: 600px;
+            max-width: 700px;
             width: 100%;
         }
 
@@ -159,12 +159,66 @@
             margin: 5px 0;
         }
 
+        .info-box.highlight {
+            background: #fff3e0;
+            border-left-color: #ff9800;
+            color: #e65100;
+        }
+
         code {
             background: #f5f5f5;
             padding: 2px 6px;
             border-radius: 3px;
             font-family: 'Courier New', monospace;
             font-size: 12px;
+        }
+
+        .script-box {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            position: relative;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+
+        .copy-btn:hover {
+            background: #5568d3;
+        }
+
+        .step {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+
+        .step-title {
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .step-content {
+            color: #555;
+            line-height: 1.6;
         }
     </style>
 </head>
@@ -187,8 +241,8 @@
         </div>
 
         <div class="button-group">
-            <button class="btn-primary" id="loginBtn">
-                🚀 使用 Token 登录
+            <button class="btn-primary" id="generateBtn">
+                🎯 生成登录脚本
             </button>
             <button class="btn-secondary" id="clearBtn">
                 🗑️ 清除
@@ -197,20 +251,52 @@
 
         <div id="status" class="status"></div>
 
+        <div id="scriptContainer" style="display: none;">
+            <div class="step">
+                <div class="step-title">📋 步骤 1：复制下面的脚本</div>
+                <div class="step-content">
+                    点击"复制脚本"按钮
+                </div>
+                <div class="script-box">
+                    <button class="copy-btn" onclick="copyScript()">📋 复制脚本</button>
+                    <pre id="scriptCode" style="margin: 0; white-space: pre-wrap; word-break: break-all;"></pre>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-title">🌐 步骤 2：打开 ChatGPT</div>
+                <div class="step-content">
+                    在新标签页中访问：<a href="https://chatgpt.com" target="_blank" style="color: #667eea;">https://chatgpt.com</a>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-title">⚡ 步骤 3：运行脚本</div>
+                <div class="step-content">
+                    1. 在 ChatGPT 页面按 <code>F12</code> 打开开发者工具<br>
+                    2. 切换到 <code>Console</code> (控制台) 标签<br>
+                    3. 粘贴刚才复制的脚本<br>
+                    4. 按 <code>Enter</code> 运行<br>
+                    5. 页面会自动刷新并登录
+                </div>
+            </div>
+        </div>
+
         <div class="info-box">
             <strong>📝 使用说明：</strong>
             <ul>
-                <li>1. 让你朋友发送他的认证 JSON 给你（完整的 JSON 或只有 sessionToken 都可以）</li>
+                <li>1. 让你朋友发送他的认证 JSON 给你</li>
                 <li>2. 粘贴到上面的输入框</li>
-                <li>3. 点击"使用 Token 登录"</li>
-                <li>4. 会打开新窗口，自动登录到他的账号</li>
-                <li>5. 在新窗口中访问充值页面，输入你的U卡信息</li>
-                <li>6. 充值完成后关闭窗口</li>
+                <li>3. 点击"生成登录脚本"</li>
+                <li>4. 按照下方步骤操作</li>
+                <li>5. 登录后访问充值页面，输入你的U卡信息</li>
             </ul>
         </div>
     </div>
 
     <script>
+        var extractedToken = '';
+
         function showStatus(message, isError) {
             var status = document.getElementById('status');
             status.textContent = message;
@@ -226,9 +312,11 @@
         function clearToken() {
             document.getElementById('tokenInput').value = '';
             document.getElementById('status').style.display = 'none';
+            document.getElementById('scriptContainer').style.display = 'none';
+            extractedToken = '';
         }
 
-        function loginWithToken() {
+        function generateScript() {
             var input = document.getElementById('tokenInput').value.trim();
 
             if (!input) {
@@ -261,64 +349,78 @@
                 return;
             }
 
-            showStatus('✅ 正在打开新窗口...', false);
+            extractedToken = token;
 
-            // 打开新窗口
-            var newWindow = window.open('about:blank', '_blank', 'width=1200,height=800');
+            // 生成脚本
+            var script = "(function() {\n" +
+                "  // 清除旧的 cookies\n" +
+                "  var cookies = document.cookie.split(';');\n" +
+                "  for (var i = 0; i < cookies.length; i++) {\n" +
+                "    var cookie = cookies[i];\n" +
+                "    var eqPos = cookie.indexOf('=');\n" +
+                "    var name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;\n" +
+                "    document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=.chatgpt.com';\n" +
+                "  }\n\n" +
+                "  // 设置新的 session token\n" +
+                "  var token = '" + token + "';\n" +
+                "  var expires = new Date();\n" +
+                "  expires.setDate(expires.getDate() + 30);\n" +
+                "  document.cookie = '__Secure-next-auth.session-token=' + token + '; expires=' + expires.toUTCString() + '; domain=.chatgpt.com; path=/; secure; samesite=lax';\n\n" +
+                "  console.log('✅ Token 已设置，正在刷新页面...');\n" +
+                "  setTimeout(function() {\n" +
+                "    window.location.href = 'https://chatgpt.com/settings/billing';\n" +
+                "  }, 500);\n" +
+                "})();";
 
-            if (!newWindow) {
-                showStatus('❌ 无法打开新窗口，请允许弹出窗口', true);
-                return;
+            document.getElementById('scriptCode').textContent = script;
+            document.getElementById('scriptContainer').style.display = 'block';
+            showStatus('✅ 登录脚本已生成！请按照下方步骤操作', false);
+
+            // 滚动到脚本区域
+            setTimeout(function() {
+                document.getElementById('scriptContainer').scrollIntoView({ behavior: 'smooth' });
+            }, 300);
+        }
+
+        function copyScript() {
+            var scriptText = document.getElementById('scriptCode').textContent;
+
+            // 复制到剪贴板
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(scriptText).then(function() {
+                    showStatus('✅ 脚本已复制到剪贴板！', false);
+                }).catch(function(err) {
+                    fallbackCopy(scriptText);
+                });
+            } else {
+                fallbackCopy(scriptText);
             }
+        }
 
-            // 构建登录页面 HTML
-            var loginPageHTML = '<!DOCTYPE html>' +
-                '<html><head><title>正在登录 ChatGPT...</title>' +
-                '<style>' +
-                'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }' +
-                '.loader { text-align: center; color: white; }' +
-                '.spinner { border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid white; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto 20px; }' +
-                '@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }' +
-                'h2 { margin: 0 0 10px 0; } p { margin: 5px 0; opacity: 0.9; }' +
-                '</style></head><body>' +
-                '<div class="loader"><div class="spinner"></div><h2>正在登录 ChatGPT</h2><p>请稍候，正在注入认证信息...</p></div>' +
-                '<script>' +
-                'setTimeout(function() {' +
-                '  window.location.href = "https://chatgpt.com";' +
-                '}, 1000);' +
-                'window.addEventListener("load", function() {' +
-                '  setTimeout(function() {' +
-                '    var cookies = document.cookie.split(";");' +
-                '    for (var i = 0; i < cookies.length; i++) {' +
-                '      var cookie = cookies[i];' +
-                '      var name = cookie.trim().split("=")[0];' +
-                '      document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=.chatgpt.com";' +
-                '    }' +
-                '    var token = ' + JSON.stringify(token) + ';' +
-                '    var expires = new Date();' +
-                '    expires.setDate(expires.getDate() + 30);' +
-                '    document.cookie = "__Secure-next-auth.session-token=" + token + "; expires=" + expires.toUTCString() + "; domain=.chatgpt.com; path=/; secure; samesite=lax";' +
-                '    setTimeout(function() {' +
-                '      window.location.href = "https://chatgpt.com/settings/billing";' +
-                '    }, 1000);' +
-                '  }, 2000);' +
-                '});' +
-                '<\/script></body></html>';
-
-            newWindow.document.write(loginPageHTML);
-            newWindow.document.close();
-
-            showStatus('✅ 新窗口已打开！等待几秒后会自动跳转到充值页面', false);
+        function fallbackCopy(text) {
+            var textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                showStatus('✅ 脚本已复制到剪贴板！', false);
+            } catch (err) {
+                showStatus('❌ 复制失败，请手动复制', true);
+            }
+            document.body.removeChild(textarea);
         }
 
         // 绑定事件
-        document.getElementById('loginBtn').addEventListener('click', loginWithToken);
+        document.getElementById('generateBtn').addEventListener('click', generateScript);
         document.getElementById('clearBtn').addEventListener('click', clearToken);
 
         // 支持快捷键
         document.getElementById('tokenInput').addEventListener('keydown', function(e) {
             if (e.ctrlKey && e.key === 'Enter') {
-                loginWithToken();
+                generateScript();
             }
         });
     </script>
