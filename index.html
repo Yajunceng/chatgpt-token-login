@@ -178,10 +178,10 @@
         </div>
 
         <div>
-            <label for="tokenInput">粘贴 Session Token：</label>
+            <label for="tokenInput">粘贴认证信息：</label>
             <textarea
                 id="tokenInput"
-                placeholder="粘贴以 eyJhbGci 开头的完整 sessionToken..."
+                placeholder="粘贴完整的 JSON 或者单独的 sessionToken 都可以..."
                 spellcheck="false"
             ></textarea>
         </div>
@@ -200,7 +200,7 @@
         <div class="info-box">
             <strong>📝 使用说明：</strong>
             <ul>
-                <li>1. 让你朋友发送他的 <code>sessionToken</code> 给你</li>
+                <li>1. 让你朋友发送他的认证 JSON 给你（完整的 JSON 或只有 sessionToken 都可以）</li>
                 <li>2. 粘贴到上面的输入框</li>
                 <li>3. 点击"使用 Token 登录"</li>
                 <li>4. 会打开新窗口，自动登录到他的账号</li>
@@ -229,13 +229,33 @@
         }
 
         function loginWithToken() {
-            var token = document.getElementById('tokenInput').value.trim();
+            var input = document.getElementById('tokenInput').value.trim();
 
-            if (!token) {
-                showStatus('❌ 请先粘贴 Session Token', true);
+            if (!input) {
+                showStatus('❌ 请先粘贴内容', true);
                 return;
             }
 
+            var token = input;
+
+            // 尝试解析 JSON，自动提取 sessionToken
+            if (input.startsWith('{')) {
+                try {
+                    var jsonData = JSON.parse(input);
+                    if (jsonData.sessionToken) {
+                        token = jsonData.sessionToken;
+                        showStatus('✅ 已从 JSON 中提取 sessionToken', false);
+                    } else {
+                        showStatus('❌ JSON 中没有找到 sessionToken 字段', true);
+                        return;
+                    }
+                } catch (e) {
+                    showStatus('❌ JSON 格式错误：' + e.message, true);
+                    return;
+                }
+            }
+
+            // 验证 token 格式
             if (!token.startsWith('eyJ')) {
                 showStatus('❌ Token 格式不正确，应该以 eyJ 开头', true);
                 return;
