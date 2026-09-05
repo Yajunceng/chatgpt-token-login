@@ -385,6 +385,10 @@
 
             // 生成书签代码
             var bookmarkCode = "javascript:(function(){" +
+                "if(!window.location.href.includes('chatgpt.com')){" +
+                "alert('⚠️ 请先打开 chatgpt.com 页面，然后再点击这个书签！');" +
+                "return;" +
+                "}" +
                 "var t='" + token.replace(/'/g, "\\'") + "';" +
                 "var c=document.cookie.split(';');" +
                 "for(var i=0;i<c.length;i++){" +
@@ -394,8 +398,15 @@
                 "var e=new Date();" +
                 "e.setDate(e.getDate()+30);" +
                 "document.cookie='__Secure-next-auth.session-token='+t+';expires='+e.toUTCString()+';domain=.chatgpt.com;path=/;secure;samesite=lax';" +
-                "alert('✅ 登录成功！页面即将跳转到充值页面');" +
-                "setTimeout(function(){window.location.href='https://chatgpt.com/settings/billing';},1000);" +
+                "console.log('✅ Token 已设置');" +
+                "console.log('Cookie:', document.cookie);" +
+                "var msg=document.createElement('div');" +
+                "msg.style.cssText='position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#10a37f;color:white;padding:20px 40px;border-radius:8px;font-size:18px;z-index:999999;box-shadow:0 4px 12px rgba(0,0,0,0.3);font-family:sans-serif';" +
+                "msg.innerHTML='✅ 登录成功！正在跳转...';" +
+                "document.body.appendChild(msg);" +
+                "setTimeout(function(){" +
+                "window.location.href='https://chatgpt.com/settings/billing';" +
+                "},2000);" +
                 "})();";
 
             // 设置书签链接
